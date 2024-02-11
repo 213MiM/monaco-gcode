@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>MonacoEditor</title>
+		<style>
+			.monacoContainer{
+				width: 100%;
+				height: 100px;
+				border: solid 1px grey;
+				box-sizing: border-box;
+			}
+		</style>
+<!--		<link
+			href="https://cdn.jsdelivr.net/npm/monaco-editor@0.40.0/min/vs/editor/editor.main.min.css"
+			rel="stylesheet" 
+			/>	-->
+	</head>
+	<body>
+		<input type="file" onchange="fileLoad(this)">
+		<select id="languageList" onchange="languageChange(this)"></select><br>
+		<div id="container" class="monacoContainer"></div>
+	</body>
+	<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.40.0/min/vs/loader.min.js"></script>
+	<script>
+		let langList = document.getElementById("languageList");
+
+		require.config({
+			paths: {
+				vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.40.0/min/vs",
+			},
+		});
+		let container = document.getElementById("container");
+
+		require(["vs/editor/editor.main"], function() {
+			monaco.editor.defineTheme('myTheme', {
+				base: 'vs',
+				inherit: true,
+				rules: [],
+				colors: {
+					"editorGutter.background": "#EEEEEE",
+				}
+			});
+			monaco.editor.setTheme("myTheme");
+
+			let editor = monaco.editor.create(container, {
+				scrollBeyondLastLine: false,
+				automaticLayout: true,
+				minimap: {
+					enabled: true
+				},
+				value: "",
+				language: 'javascript'
+			});
+
+			monaco.languages.getLanguages().forEach((lang) => {
+				let newElm = document.createElement("option");
+				newElm.value = lang.id;
+				newElm.innerHTML = lang.id;
+				if (typeof(lang.aliases) !== 'undefined' ){
+					newElm.innerHTML = lang.aliases[0];
+				}
+				langList.appendChild(newElm);
+			});
+
+		});
+
+		let containerRect = container.getBoundingClientRect();
+		let htmlRect = document.querySelector("html").getBoundingClientRect();
+	
+		container.style.height = (window.innerHeight - containerRect.top - (htmlRect.bottom - containerRect.bottom)) + 'px';	//htmlのmargin分だけ下にずれるのでcontainerのtop座標をmarginとみなしてその分引く
+	//container.style.height = (window.innerHeight - ) + 'px';
+
+		function fileLoad(thisElm){
+			if (thisElm.files.length < 1){
+				console.log("file is not found.");
+				return;
+			}
+			thisElm.files[0].text()
+			.then((text) => {
+				monaco.editor.getModels().forEach((elm) => {
+					elm.setValue(text);
+				});
+			});
+		}
+
+		function languageChange(thisElm){
+			if (thisElm.value === null){
+				return;
+			}
+			monaco.editor.getModels().forEach((model) => {
+				model.setLanguage(thisElm.value);
+			});
+		}
+	</script>
+</html>
