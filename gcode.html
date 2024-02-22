@@ -42,14 +42,28 @@
 		require(["vs/editor/editor.main"], function() {
 			monaco.languages.register({id: "fanuc-gcode"});
 			monaco.languages.setMonarchTokensProvider("fanuc-gcode", {
+				keywords: [
+					'IF', 'THEN', 'GOTO', 'WHILE', 'SWITCH', 'CASE',
+				],
+				axis: [
+					'X', 'Y', 'Z',
+				],
 				tokenizer: {
 					root: [
-						[/\(.*\)/, "comment"],
-						[/G[0-9]+/, "keyword"],
+						[/\(/, "comment", "@comment"],
+						[/G(?=[0-9]+)/, "gcode-normal", '@gcode'],
 						[/[XYZ]-?[0-9.]+/, "string"],
 						[/-?#[0-9]+/, "variable"],
 						[/[XYZ]/, "string"],
-						[/[ONMFSTDHPQR]-?[0-9.]+/, "keyword"]
+						[/[A-Z]+/, { cases: { '@keywords': 'gcode-keyword',}}],
+						//[/[ONMFSTDHPQR]-?[0-9.]+/, "keyword"]
+					],
+					comment: [
+						[/[^\(\)]*\(/, 'comment', '@push'],
+						[/[^\(\)]*\)/, 'comment', '@pop'],
+					],
+					gcode: [
+						[/[0-9.]+/, 'number-after-gcode', '@pop'],
 					],
 				}
 			});
@@ -57,7 +71,11 @@
 			monaco.editor.defineTheme('myTheme', {
 				base: 'vs',
 				inherit: true,
-				rules: [],
+				rules: [
+					{token: 'gcode-normal', foreground: 'e60000', fontStyle: 'bold'},
+					{token: 'number-after-gcode', foreground: 'e60000'},
+					{token: 'gcode-keyword', foreground: '0000ff'}
+				],
 				colors: {
 					"editorGutter.background": "#EEEEEE",
 				}
